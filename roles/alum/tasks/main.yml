@@ -1,0 +1,41 @@
+ - apt: update_cache=yes
+ - apt: name=postfix state=present
+ - apt: name=mailutils state=present
+
+ - command: cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
+
+ - command: postconf myhostname={{ hostname }}
+ - command: postconf mydestination=
+ - command: postconf virtual_alias_domains={{ domain }}
+ - command: postconf virtual_alias_maps=hash:/etc/postfix/virtual
+ - command: postconf queue_run_delay=60s
+ - command: postconf minimal_backoff_time=60s
+ - command: postconf smtp_tls_security_level=may
+ - command: postconf smtp_tls_note_starttls_offer=yes
+ - command: postconf smtp_tls_loglevel=1
+ - command: postconf smtp_tls_CAfile=/etc/ssl/certs/ca-certificates.crt
+ - command: postconf smtpd_tls_loglevel=1
+ - command: postconf smtpd_tls_security_level=may
+ - command: postconf smtpd_tls_received_header=yes
+ - command: postconf smtpd_tls_session_cache_timeout=3600s
+ - command: postconf smtpd_tls_cert_file=/etc/postfix/smtpd.pem
+ - command: postconf tls_random_source=dev:/dev/urandom
+
+ - copy: src=smtpd.pem dest=/etc/postfix/smtpd.pem mode=600
+
+ - file: path=/etc/postfix/virtual state=touch
+ - command: postmap /etc/postfix/virtual
+
+ - service: name=postfix state=started
+ - command: postfix reload
+
+ - copy: src=20auto-upgrades dest=/etc/apt/apt.conf.d/20auto-upgrades
+ - template: src=50unattended-upgrades dest=/etc/apt/apt.conf.d/50unattended-upgrades
+ - service: name=unattended-upgrades state=restarted
+
+ - copy: src=tarsnap.key dest=/root/tarsnap-alum.key mode=600
+ - copy: src=tarsnap dest=/usr/local/bin/tarsnap mode=755
+ - copy: src=tarsnap.conf dest=/usr/local/etc/tarsnap.conf
+ - file: path=/usr/local/tarsnap-cache state=directory
+ - cron: name="Tarsnap backup of virtual" special_time=daily
+        job="/bin/bash -c '/usr/local/bin/tarsnap -c -f alum-$(date +%s) /etc/postfix/virtual'"

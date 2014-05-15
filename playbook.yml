@@ -1,0 +1,6 @@
+---
+- hosts: alum
+  sudo: yes
+  remote_user: ubuntu
+  roles:
+     - alum
