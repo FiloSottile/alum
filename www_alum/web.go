@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"text/template"
 
@@ -190,7 +191,6 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
 		return
 	}
-	defer virtual.Close()
 
 	for rows.Next() {
 		var alias string
@@ -198,6 +198,11 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		err = rows.Scan(&alias, &addr)
 		fmt.Fprintf(virtual, "%s@alum.hackerschool.com %s\n", alias, addr)
 	}
+
+	virtual.Close()
+
+	exec.Command("postmap", "/etc/postfix/virtual").Run()
+	exec.Command("postfix", "reload").Run()
 
 	http.Redirect(w, r, "/", 303)
 }
