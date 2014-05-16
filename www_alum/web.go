@@ -45,7 +45,7 @@ func set_cookie(user_id string, w http.ResponseWriter) {
 		MaxAge:   60 * 5,
 		Path:     "/",
 		HttpOnly: true,
-		// Secure:   true,
+		Secure:   true,
 	}
 
 	http.SetCookie(w, cookie)
@@ -101,7 +101,7 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		MaxAge:   60,
 		Path:     "/",
 		HttpOnly: true,
-		// Secure:   true,
+		Secure:   true,
 	}
 	http.SetCookie(w, cookie)
 
@@ -184,7 +184,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	virtual, err := os.Create("virtual")
+	virtual, err := os.Create("/etc/postfix/virtual")
 	if err != nil {
 		log.Println(err)
 		http.Error(w, http.StatusText(500), 500)
