@@ -1,0 +1,10 @@
+ - apt: update_cache=yes
+ - apt: name=nginx state=present
+
+ - file: path=/etc/nginx/sites-enabled/default state=absent
+ - copy: src=alum dest=/etc/nginx/sites-available/alum
+ - file: path=/etc/nginx/sites-enabled/alum src=../sites-available/alum state=link
+
+ - copy: src=nginx.pem dest=/etc/nginx/nginx.pem mode=600
+
+ - service: name=nginx state=restarted
