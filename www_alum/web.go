@@ -62,10 +62,27 @@ func read_cookie(r *http.Request) string {
 func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 
+	if user_id == "" {
+		http.Redirect(w, r, "/login", 302)
+		return
+	}
+
+	var alias string
+	var addr string
+
+	err := db.QueryRow(`SELECT alias, addr FROM "ALIASES" WHERE user_id = ?`,
+		user_id).Scan(&alias, &addr)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
 	t, _ := template.ParseFiles("form.html")
+
 	context := &TemplateContext{
-		Alias: user_id,
-		Addr:  "$ADDR",
+		Alias: alias,
+		Addr:  addr,
 	}
 	t.Execute(w, context)
 }

@@ -4,8 +4,12 @@
   </head>
   <body>
     <p>
-        Your current alias is: {{.Alias}}<br />
+        {{ if .Alias }}
+        Your current alias is: {{.Alias}}@alum.hackerschool.com<br />
         and it maps to: {{.Addr}}
+        {{ else }}
+        You don't currently have an alias
+        {{end}}
     </p>
     <form method="POST" action="/">
         <p>
