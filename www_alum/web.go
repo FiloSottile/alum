@@ -6,9 +6,11 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 	"text/template"
 
@@ -172,6 +174,29 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		}
 		w.Write(file)
 		return
+	}
+
+	// Recreate the postfix file.
+	rows, err := db.Query(`SELECT alias, addr FROM "ALIASES"`)
+	if err != nil && err != sql.ErrNoRows {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	virtual, err := os.Create("virtual")
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+	defer virtual.Close()
+
+	for rows.Next() {
+		var alias string
+		var addr string
+		err = rows.Scan(&alias, &addr)
+		fmt.Fprintf(virtual, "%s@alum.hackerschool.com %s\n", alias, addr)
 	}
 
 	http.Redirect(w, r, "/", 303)
