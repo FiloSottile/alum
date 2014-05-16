@@ -9,7 +9,7 @@
         and it maps to: {{.Addr}}
         {{ else }}
         You don't currently have an alias
-        {{end}}
+        {{ end }}
     </p>
     <form method="POST" action="/">
         <p>
@@ -22,6 +22,7 @@
             <input type="text" placeholder="you@gmail.com" name="addr"/>
         </p>
 
+        <input type="hidden" value="{{.Csrf_token}}" name="csrf_token" />
         <input type="submit" value="Register" />
     </form>
   </body>

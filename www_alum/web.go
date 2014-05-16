@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"text/template"
 
 	"github.com/zenazn/goji"
@@ -17,14 +18,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type TemplateContext struct {
-	Alias string
-	Addr  string
-}
+const charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.@_"
 
 var db *sql.DB
 
 var cookie_secret = make([]byte, 16)
+
+func validate_charset(s string) bool {
+	for _, c := range s {
+		if strings.Index(charset, string(c)) == -1 {
+			return false
+		}
+	}
+	return true
+}
 
 func set_cookie(user_id string, w http.ResponseWriter) {
 	mac := hmac.New(sha256.New, cookie_secret)
@@ -78,13 +85,43 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	csrf_token := make([]byte, 16)
+	_, err = rand.Read(csrf_token)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     "csrf_token",
+		Value:    hex.EncodeToString(csrf_token),
+		MaxAge:   60,
+		Path:     "/",
+		HttpOnly: true,
+		// Secure:   true,
+	}
+	http.SetCookie(w, cookie)
+
 	t, _ := template.ParseFiles("form.html")
 
-	context := &TemplateContext{
-		Alias: alias,
-		Addr:  addr,
+	type TemplateContext struct {
+		Alias      string
+		Addr       string
+		Csrf_token string
 	}
-	t.Execute(w, context)
+	context := &TemplateContext{
+		Alias:      alias,
+		Addr:       addr,
+		Csrf_token: hex.EncodeToString(csrf_token),
+	}
+
+	err = t.Execute(w, context)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
 }
 
 func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -97,8 +134,24 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cookie, err := r.Cookie("csrf_token")
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(403), 403)
+		return
+	}
+	if cookie.Value != r.PostForm.Get("csrf_token") {
+		http.Error(w, http.StatusText(403), 403)
+		return
+	}
+
 	alias := r.PostForm.Get("alias")
 	addr := r.PostForm.Get("addr")
+
+	if !validate_charset(alias) || !validate_charset(addr) {
+		http.Error(w, "Unallowed characters", 403)
+		return
+	}
 
 	_, err = db.Exec(`DELETE FROM "ALIASES" WHERE user_id = ?`, user_id)
 	if err != nil {
