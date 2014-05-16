@@ -1,0 +1,24 @@
+<html>
+  <head>
+    <title>Alum Email</title>
+  </head>
+  <body>
+    <p>
+        Your current alias is: {{.Alias}}<br />
+        and it maps to: {{.Addr}}
+    </p>
+    <form method="POST" action="/">
+        <p>
+            <label for="alias">Enter your Hacker School alumni email address:</label><br />
+            <input type="text" placeholder="name.lastname" name="alias"/>@alum.hackerschool.com
+        </p>
+
+        <p>
+            <label for="addr">Enter the email address you'd like to receive emails on</label><br />
+            <input type="text" placeholder="you@gmail.com" name="addr"/>
+        </p>
+
+        <input type="submit" value="Register" />
+    </form>
+  </body>
+</html>

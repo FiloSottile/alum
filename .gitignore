@@ -2,3 +2,5 @@
 *.key
 inventory.ini
 config.yml
+alum.db
+www_alum/www_alum
