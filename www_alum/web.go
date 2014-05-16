@@ -21,13 +21,13 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-.@_"
+const CHARSET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-._@+"
 
 var db *sql.DB
 
 var cookie_secret = make([]byte, 16)
 
-func validate_charset(s string) bool {
+func validate_charset(s, charset string) bool {
 	for _, c := range s {
 		if strings.Index(charset, string(c)) == -1 {
 			return false
@@ -151,8 +151,14 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	alias := r.PostForm.Get("alias")
 	addr := r.PostForm.Get("addr")
 
-	if !validate_charset(alias) || !validate_charset(addr) {
+	if !validate_charset(alias, CHARSET[:len(CHARSET)-2]) || !validate_charset(addr, CHARSET) {
 		http.Error(w, "Unallowed characters", 403)
+		return
+	}
+
+	if alias == "postmaster" || alias == "webmaster" || alias == "root" ||
+		alias == "abuse" || alias == "hackerschool" {
+		http.Error(w, "Stop it ;)", 403)
 		return
 	}
 
