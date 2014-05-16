@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"text/template"
@@ -70,6 +71,8 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 }
 
 func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
+	user_id := read_cookie(r)
+
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("Could not parse form params")
@@ -77,8 +80,30 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(r.PostForm.Get("alias"))
-	log.Println(r.PostForm.Get("addr"))
+	alias := r.PostForm.Get("alias")
+	addr := r.PostForm.Get("addr")
+
+	_, err = db.Exec(`DELETE FROM "ALIASES" WHERE user_id = ?`, user_id)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	_, err = db.Exec(`INSERT INTO "ALIASES" (user_id, alias, addr)
+					  VALUES (?, ?, ?)`, user_id, alias, addr)
+	if err != nil {
+		log.Println(err)
+		file, err := ioutil.ReadFile("./error.html")
+		if err != nil {
+			log.Println(err)
+			http.Error(w, http.StatusText(500), 500)
+			return
+		}
+		w.Write(file)
+		return
+	}
+
 	http.Redirect(w, r, "/", 303)
 }
 
