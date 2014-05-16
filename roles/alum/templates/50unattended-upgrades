@@ -18,4 +18,4 @@ Unattended-Upgrade::MailOnlyOnError "true";
 
 // Automatically reboot *WITHOUT CONFIRMATION*
 //  if the file /var/run/reboot-required is found after the upgrade
-Unattended-Upgrade::Automatic-Reboot "false";
+Unattended-Upgrade::Automatic-Reboot "true";
