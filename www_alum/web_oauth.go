@@ -1,12 +1,11 @@
 package main
 
 import (
-	"fmt"
-	"io"
+	"encoding/json"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 
 	"code.google.com/p/goauth2/oauth"
 
@@ -22,12 +21,6 @@ const (
 	scope       = ""
 	apiURL      = "https://www.hackerschool.com/api/v1/people/me"
 )
-
-type Config struct {
-	OAuth_clientId     string `yaml:"OAuth_clientId"`
-	OAuth_clientSecret string `yaml:"OAuth_clientSecret"`
-	Cookie_secret      string `yaml:"cookie_secret"`
-}
 
 var oauth_config *oauth.Config
 
@@ -62,8 +55,26 @@ func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer res.Body.Close()
-	io.Copy(os.Stdout, res.Body)
-	fmt.Println()
+
+	json_me, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		log.Println("API read failed")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	type Me struct{ Id int }
+	me := &Me{}
+	err = json.Unmarshal(json_me, me)
+	if err != nil {
+		log.Println("Malformed API response")
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	set_cookie(strconv.Itoa(me.Id), w)
+
+	http.Redirect(w, r, "/", 303)
 }
 
 func load_oauth() {
@@ -72,8 +83,13 @@ func load_oauth() {
 		log.Fatal(err)
 	}
 
-	config := Config{}
-	err = yaml.Unmarshal(file, &config)
+	type Config struct {
+		OAuth_clientId     string `yaml:"OAuth_clientId"`
+		OAuth_clientSecret string `yaml:"OAuth_clientSecret"`
+	}
+
+	config := &Config{}
+	err = yaml.Unmarshal(file, config)
 	if err != nil {
 		log.Fatal(err)
 	}
