@@ -64,6 +64,10 @@ func read_cookie(r *http.Request) string {
 		return ""
 	}
 
+	if len(cookie.Value) <= sha256.Size*2 {
+		return ""
+	}
+
 	mac := hmac.New(sha256.New, cookie_secret)
 	mac.Write([]byte(cookie.Value[sha256.Size*2:]))
 
@@ -77,7 +81,6 @@ func read_cookie(r *http.Request) string {
 
 func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
-
 	if user_id == "" {
 		http.Redirect(w, r, "/login", 302)
 		return
@@ -135,7 +138,6 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 
 func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
-
 	if user_id == "" {
 		http.Redirect(w, r, "/", 303)
 		return
