@@ -16,9 +16,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/zenazn/goji"
-	"github.com/zenazn/goji/web"
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -79,7 +76,7 @@ func read_cookie(r *http.Request) string {
 	return cookie.Value[sha256.Size*2:]
 }
 
-func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
+func get_form(w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -136,7 +133,7 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
+func post_form(w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -254,7 +251,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	goji.Get("/", get_form)
-	goji.Post("/", post_form)
-	goji.Serve()
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			get_form(w, r)
+		} else if r.Method == "POST" {
+			post_form(w, r)
+		} else {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		}
+	})
+	log.Fatal(http.ListenAndServe(":80", nil))
 }

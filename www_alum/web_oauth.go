@@ -9,8 +9,6 @@ import (
 
 	"code.google.com/p/goauth2/oauth"
 
-	"github.com/zenazn/goji"
-	"github.com/zenazn/goji/web"
 	"gopkg.in/yaml.v1"
 )
 
@@ -24,12 +22,12 @@ const (
 
 var oauth_config *oauth.Config
 
-func login(c web.C, w http.ResponseWriter, r *http.Request) {
+func login(w http.ResponseWriter, r *http.Request) {
 	url := oauth_config.AuthCodeURL("")
 	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
-func callback(c web.C, w http.ResponseWriter, r *http.Request) {
+func callback(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		log.Println("Code not received")
@@ -103,6 +101,6 @@ func load_oauth() {
 		TokenURL:     tokenURL,
 	}
 
-	goji.Get("/login", login)
-	goji.Get("/oauth-redirect", callback)
+	http.HandleFunc("/login", login)
+	http.HandleFunc("/oauth-redirect", callback)
 }
