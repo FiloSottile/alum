@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/zenazn/goji"
@@ -21,11 +22,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const CHARSET = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-._@+"
+const (
+	ADDR_CHARSET  = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ-._@+"
+	ALIAS_CHARSET = "0123456789abcdefghijklmnopqrstuvwxyz-._"
+)
 
 var db *sql.DB
 
 var cookie_secret = make([]byte, 16)
+
+var virtual_mutex = &sync.Mutex{}
 
 func validate_charset(s, charset string) bool {
 	for _, c := range s {
@@ -130,6 +136,11 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 
+	if user_id == "" {
+		http.Redirect(w, r, "/", 303)
+		return
+	}
+
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("Could not parse form params")
@@ -151,13 +162,14 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	alias := r.PostForm.Get("alias")
 	addr := r.PostForm.Get("addr")
 
-	if !validate_charset(alias, CHARSET[:len(CHARSET)-2]) || !validate_charset(addr, CHARSET) {
+	if !validate_charset(alias, ALIAS_CHARSET) || !validate_charset(addr, ADDR_CHARSET) {
 		http.Error(w, "Unallowed characters", 403)
 		return
 	}
 
 	if alias == "postmaster" || alias == "webmaster" || alias == "root" ||
-		alias == "abuse" || alias == "hackerschool" {
+		alias == "abuse" || alias == "hackerschool" || alias == "admin" ||
+		alias == "mailer-daemon" || alias == "founders" || alias == "faculty" {
 		http.Error(w, "Stop it ;)", 403)
 		return
 	}
@@ -191,6 +203,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	virtual_mutex.Lock()
 	virtual, err := os.Create("/etc/postfix/virtual")
 	if err != nil {
 		log.Println(err)
@@ -209,6 +222,8 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 
 	exec.Command("postmap", "/etc/postfix/virtual").Run()
 	exec.Command("postfix", "reload").Run()
+
+	virtual_mutex.Unlock()
 
 	http.Redirect(w, r, "/", 303)
 }
