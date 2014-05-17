@@ -26,14 +26,14 @@ var oauth_config *oauth.Config
 
 func login(c web.C, w http.ResponseWriter, r *http.Request) {
 	url := oauth_config.AuthCodeURL("")
-	http.Redirect(w, r, url, 303)
+	http.Redirect(w, r, url, http.StatusSeeOther)
 }
 
 func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		log.Println("Code not received")
-		http.Error(w, http.StatusText(400), 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
@@ -42,7 +42,7 @@ func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 	token, err := transport.Exchange(code)
 	if err != nil || token == nil {
 		log.Println("Exchange failed", err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -51,7 +51,7 @@ func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 	res, err := transport.Client().Get(apiURL)
 	if err != nil {
 		log.Println("API call failed")
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
@@ -59,7 +59,7 @@ func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 	json_me, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		log.Println("API read failed")
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -68,13 +68,13 @@ func callback(c web.C, w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(json_me, me)
 	if err != nil {
 		log.Println("Malformed API response")
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
 	set_cookie(strconv.Itoa(me.Id), w)
 
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func load_oauth() {

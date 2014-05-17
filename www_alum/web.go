@@ -82,7 +82,7 @@ func read_cookie(r *http.Request) string {
 func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
-		http.Redirect(w, r, "/login", 302)
+		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
 
@@ -93,7 +93,7 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		user_id).Scan(&alias, &addr)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -101,7 +101,7 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	_, err = rand.Read(csrf_token)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -131,7 +131,7 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	err = t.Execute(w, context)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
@@ -139,25 +139,25 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
-		http.Redirect(w, r, "/", 303)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	err := r.ParseForm()
 	if err != nil {
 		log.Println("Could not parse form params")
-		http.Error(w, http.StatusText(400), 400)
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 
 	cookie, err := r.Cookie("csrf_token")
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(403), 403)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 	if cookie.Value != r.PostForm.Get("csrf_token") {
-		http.Error(w, http.StatusText(403), 403)
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return
 	}
 
@@ -165,21 +165,21 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	addr := r.PostForm.Get("addr")
 
 	if !validate_charset(alias, ALIAS_CHARSET) || !validate_charset(addr, ADDR_CHARSET) {
-		http.Error(w, "Unallowed characters", 403)
+		http.Error(w, "Unallowed characters", http.StatusForbidden)
 		return
 	}
 
 	if alias == "postmaster" || alias == "webmaster" || alias == "root" ||
 		alias == "abuse" || alias == "hackerschool" || alias == "admin" ||
 		alias == "mailer-daemon" || alias == "founders" || alias == "faculty" {
-		http.Error(w, "Stop it ;)", 403)
+		http.Error(w, "Stop it ;)", http.StatusForbidden)
 		return
 	}
 
 	_, err = db.Exec(`DELETE FROM "ALIASES" WHERE user_id = ?`, user_id)
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -190,7 +190,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		file, err := ioutil.ReadFile("./error.html")
 		if err != nil {
 			log.Println(err)
-			http.Error(w, http.StatusText(500), 500)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		w.Write(file)
@@ -201,7 +201,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT alias, addr FROM "ALIASES"`)
 	if err != nil && err != sql.ErrNoRows {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -209,7 +209,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	virtual, err := os.Create("/etc/postfix/virtual")
 	if err != nil {
 		log.Println(err)
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
@@ -227,7 +227,7 @@ func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
 
 	virtual_mutex.Unlock()
 
-	http.Redirect(w, r, "/", 303)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func main() {
