@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/zenazn/goji"
 	"github.com/zenazn/goji/web"
