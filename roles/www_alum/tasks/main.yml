@@ -8,3 +8,21 @@
  - copy: src=nginx.pem dest=/etc/nginx/nginx.pem mode=600
 
  - service: name=nginx state=restarted
+
+
+ - apt: pkg=daemontools
+ - apt: pkg=daemontools-run
+
+ - file: path=/etc/service/alum/ state=directory
+ - file: path=/etc/service/alum/supervise/ state=directory
+
+ - copy: src=run.sh dest=/etc/service/alum/run mode=0755
+
+ - file: path=/root/www_alum/ state=directory
+ - copy: src=www_alum/www_alum dest=/root/www_alum/www_alum mode=0755
+ - copy: src=www_alum/form.html dest=/root/www_alum/form.html
+ - copy: src=www_alum/error.html dest=/root/www_alum/error.html
+ - copy: src=www_alum/config.yml dest=/root/www_alum/config.yml
+
+ - service: name=svscan state=started
+ - command: svc -u /etc/service/alum/
