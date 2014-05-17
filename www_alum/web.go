@@ -30,6 +30,8 @@ var cookie_secret = make([]byte, 16)
 
 var virtual_mutex = &sync.Mutex{}
 
+var form_template = load_template("form.html")
+
 func validate_charset(s, charset string) bool {
 	for _, c := range s {
 		if strings.Index(charset, string(c)) == -1 {
@@ -76,6 +78,14 @@ func read_cookie(r *http.Request) string {
 	return cookie.Value[sha256.Size*2:]
 }
 
+func load_template(filename string) *template.Template {
+	var file_content, err = ioutil.ReadFile(filename)
+	if err != nil {
+		log.Panic(err)
+	}
+	return template.Must(template.New(filename).Parse(string(file_content)))
+}
+
 func get_form(w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
@@ -112,8 +122,6 @@ func get_form(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 
-	t, _ := template.ParseFiles("form.html")
-
 	type TemplateContext struct {
 		Alias      string
 		Addr       string
@@ -125,8 +133,7 @@ func get_form(w http.ResponseWriter, r *http.Request) {
 		Csrf_token: hex.EncodeToString(csrf_token),
 	}
 
-	err = t.Execute(w, context)
-	if err != nil {
+	if err = form_template.Execute(w, context); err != nil {
 		log.Println(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
