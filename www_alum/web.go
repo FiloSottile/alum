@@ -16,9 +16,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/zenazn/goji"
-	"github.com/zenazn/goji/web"
-
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -32,6 +29,8 @@ var db *sql.DB
 var cookie_secret = make([]byte, 16)
 
 var virtual_mutex = &sync.Mutex{}
+
+var form_template = load_template("form.html")
 
 func validate_charset(s, charset string) bool {
 	for _, c := range s {
@@ -79,7 +78,15 @@ func read_cookie(r *http.Request) string {
 	return cookie.Value[sha256.Size*2:]
 }
 
-func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
+func load_template(filename string) *template.Template {
+	var file_content, err = ioutil.ReadFile(filename)
+	if err != nil {
+		log.Panic(err)
+	}
+	return template.Must(template.New(filename).Parse(string(file_content)))
+}
+
+func get_form(w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
 		http.Redirect(w, r, "/login", http.StatusFound)
@@ -115,8 +122,6 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, cookie)
 
-	t, _ := template.ParseFiles("form.html")
-
 	type TemplateContext struct {
 		Alias      string
 		Addr       string
@@ -128,15 +133,14 @@ func get_form(c web.C, w http.ResponseWriter, r *http.Request) {
 		Csrf_token: hex.EncodeToString(csrf_token),
 	}
 
-	err = t.Execute(w, context)
-	if err != nil {
+	if err = form_template.Execute(w, context); err != nil {
 		log.Println(err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
 
-func post_form(c web.C, w http.ResponseWriter, r *http.Request) {
+func post_form(w http.ResponseWriter, r *http.Request) {
 	user_id := read_cookie(r)
 	if user_id == "" {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -254,7 +258,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	goji.Get("/", get_form)
-	goji.Post("/", post_form)
-	goji.Serve()
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" {
+			get_form(w, r)
+		} else if r.Method == "POST" {
+			post_form(w, r)
+		} else {
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		}
+	})
+	log.Fatal(http.ListenAndServe("localhost:8000", nil))
 }
