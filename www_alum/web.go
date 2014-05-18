@@ -180,6 +180,11 @@ func post_form(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(alias) > 200 {
+		http.Error(w, "Stop it ;)", http.StatusForbidden)
+		return
+	}
+
 	_, err = db.Exec(`DELETE FROM "ALIASES" WHERE user_id = ?`, user_id)
 	if err != nil {
 		log.Println(err)
