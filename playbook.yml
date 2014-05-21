@@ -3,5 +3,6 @@
   sudo: yes
   remote_user: ubuntu
   roles:
-     - www_alum
+     # Enable this if you want to deploy also the Go web app
+     # - www_alum
      - alum
