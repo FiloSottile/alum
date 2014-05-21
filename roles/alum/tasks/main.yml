@@ -38,4 +38,4 @@
  - copy: src=tarsnap.conf dest=/usr/local/etc/tarsnap.conf
  - file: path=/usr/local/tarsnap-cache state=directory
  - cron: name="Tarsnap backup of virtual" special_time=daily
-        job="/bin/bash -c '/usr/local/bin/tarsnap -c -f alum-$(date +%s) /etc/postfix/virtual'"
+        job="/bin/bash -c '/usr/local/bin/tarsnap -c -f alum-$(date +\%s) /etc/postfix/virtual'"
