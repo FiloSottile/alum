@@ -4,9 +4,9 @@
 
  - command: cp /usr/share/postfix/main.cf.debian /etc/postfix/main.cf
 
- - command: postconf myhostname={{ hostname }}
+ - command: postconf myhostname={{ domain }}
  - command: postconf mydestination=
- - command: postconf virtual_alias_domains={{ domain }}
+ - command: postconf virtual_alias_domains="{{ domain }} {{ mirror }}"
  - command: postconf virtual_alias_maps=hash:/etc/postfix/virtual
  - command: postconf queue_run_delay=60s
  - command: postconf minimal_backoff_time=60s
