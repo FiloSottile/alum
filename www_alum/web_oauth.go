@@ -14,10 +14,10 @@ import (
 
 const (
 	redirectURL = "https://alum.hackerschool.com/oauth-redirect"
-	authURL     = "https://www.hackerschool.com/oauth/authorize"
-	tokenURL    = "https://www.hackerschool.com/oauth/token"
+	authURL     = "https://www.recurse.com/oauth/authorize"
+	tokenURL    = "https://www.recurse.com/oauth/token"
 	scope       = ""
-	apiURL      = "https://www.hackerschool.com/api/v1/people/me"
+	apiURL      = "https://www.recurse.com/api/v1/people/me"
 )
 
 var oauth_config *oauth.Config

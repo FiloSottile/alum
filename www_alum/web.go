@@ -227,6 +227,7 @@ func post_form(w http.ResponseWriter, r *http.Request) {
 		var addr string
 		err = rows.Scan(&alias, &addr)
 		fmt.Fprintf(virtual, "%s@alum.hackerschool.com %s\n", alias, addr)
+		fmt.Fprintf(virtual, "%s@alum.recurse.com %s\n", alias, addr)
 	}
 
 	virtual.Close()

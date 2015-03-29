@@ -5,7 +5,7 @@
   <body>
     <p>
         {{ if .Alias }}
-        Your current alias is: {{.Alias}}@alum.hackerschool.com<br />
+        Your current alias is: {{.Alias}}@alum.recurse.com<br />
         and it maps to: {{.Addr}}
         {{ else }}
         You don't currently have an alias
@@ -21,7 +21,7 @@
     <form method="POST" action="/">
         <p>
             <label for="alias">Enter your Hacker School alumni email address:</label><br />
-            <input type="text" placeholder="name.lastname" name="alias"/>@alum.hackerschool.com
+            <input type="text" placeholder="name.lastname" name="alias"/>@alum.recurse.com
         </p>
 
         <p>
