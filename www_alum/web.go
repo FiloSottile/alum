@@ -266,7 +266,9 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" {
+		if r.URL.Path != "/" {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		} else if r.Method == "GET" {
 			get_form(w, r)
 		} else if r.Method == "POST" {
 			post_form(w, r)
