@@ -175,7 +175,8 @@ func post_form(w http.ResponseWriter, r *http.Request) {
 
 	if alias == "postmaster" || alias == "webmaster" || alias == "root" ||
 		alias == "abuse" || alias == "hackerschool" || alias == "admin" ||
-		alias == "mailer-daemon" || alias == "founders" || alias == "faculty" {
+		alias == "mailer-daemon" || alias == "founders" || alias == "faculty" ||
+		alias == "administrator" || alias == "hostmaster" || alias == "recurse" {
 		http.Error(w, "Stop it ;)", http.StatusForbidden)
 		return
 	}
