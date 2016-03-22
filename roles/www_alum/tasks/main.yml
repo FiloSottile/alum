@@ -1,16 +1,6 @@
  - apt: update_cache=yes
  - apt: name=nginx state=present
-
- - file: path=/etc/nginx/sites-enabled/default state=absent
- - template: src=alum dest=/etc/nginx/sites-available/alum
- - file: path=/etc/nginx/sites-enabled/alum src=../sites-available/alum state=link
-
- - command: openssl dhparam -out /etc/nginx/dhparam.pem 2048 creates=/etc/nginx/dhparam.pem
- - copy: src={{ domain }}.pem dest=/etc/nginx/{{ domain }}.pem mode=600
- - copy: src={{ mirror }}.pem dest=/etc/nginx/{{ mirror }}.pem mode=600
-
- - service: name=nginx state=restarted
-
+ - service: name=nginx state=stopped enabled=no
 
  - apt: pkg=daemontools
  - apt: pkg=daemontools-run
@@ -25,8 +15,17 @@
  - copy: src=www_alum/error.html dest=/root/www_alum/error.html
  - copy: src=www_alum/config.yml dest=/root/www_alum/config.yml
 
+ - file: path=/root/caddy/log/main/ state=directory
+ - copy: src=run.caddy.sh dest=/root/caddy/run mode=0755
+ - copy: src=log.sh dest=/root/caddy/log/run mode=0755
+
+ - template: src=Caddyfile dest=/root/caddy/Caddyfile
+ - get_url: url=https://github.com/mholt/caddy/releases/download/v0.8.2/caddy_linux_amd64.tar.gz dest=/root/caddy_linux_amd64.tar.gz sha256sum=497ddf916b1d38e5435c4bd996b89c208ecb6dc05cf447381e549d39a616db4b
+ - command: tar xvf ../caddy_linux_amd64.tar.gz caddy chdir=/root/caddy creates=/root/caddy/caddy
+
  - file: path=/etc/service/alum state=link src=/root/alum
+ - file: path=/etc/service/caddy state=link src=/root/caddy
 
  - service: name=svscan state=started
  - command: svc -u /etc/service/alum/
- - command: svc -i /etc/service/alum/
+ - command: svc -u /etc/service/caddy/

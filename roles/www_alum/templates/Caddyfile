@@ -1,0 +1,11 @@
+{{ domain }} {
+    gzip
+    tls postmaster@{{ domain }}
+    proxy / localhost:8000
+}
+
+{{ mirror }} {
+    gzip
+    tls postmaster@{{ domain }}
+    redir https://{{ domain }}{uri} 301
+}
